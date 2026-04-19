@@ -1,0 +1,36 @@
+name: Deploy Notes App to Azure VM
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create SSH key
+        run: |
+          echo "${{ secrets.AZURE_VM_SSH_KEY }}" > private_key
+          chmod 600 private_key
+
+      - name: Copy project files to Azure VM
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i private_key -o StrictHostKeyChecking=no" \
+            ./ ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:${{ secrets.APP_DIR }}
+
+      - name: Deploy application on Azure VM
+        run: |
+          ssh -i private_key -o StrictHostKeyChecking=no \
+            ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} << 'EOF'
+              cd ${{ secrets.APP_DIR }}
+              docker compose down
+              docker compose up -d --build
+              docker compose ps
+          EOF
