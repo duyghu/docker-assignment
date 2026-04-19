@@ -1,4 +1,4 @@
-name: Deploy Notes App to Azure VM
+name: Deploy Three-Tier App to Azure VM
 
 on:
   push:
@@ -19,18 +19,13 @@ jobs:
           echo "${{ secrets.AZURE_VM_SSH_KEY }}" > private_key
           chmod 600 private_key
 
-      - name: Copy project files to Azure VM
+      - name: Deploy on Azure VM
         run: |
-          rsync -avz --delete \
-            -e "ssh -i private_key -o StrictHostKeyChecking=no" \
-            ./ ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:${{ secrets.APP_DIR }}
-
-      - name: Deploy application on Azure VM
-        run: |
-          ssh -i private_key -o StrictHostKeyChecking=no \
-            ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} << 'EOF'
-              cd ${{ secrets.APP_DIR }}
-              docker compose down
-              docker compose up -d --build
-              docker compose ps
+          ssh -i private_key -o StrictHostKeyChecking=no ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} << 'EOF'
+            cd /home/azureuser/docker-assignment
+            pwd
+            ls
+            docker compose down
+            docker compose up -d --build
+            docker compose ps
           EOF
