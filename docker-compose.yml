@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: notes-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: notes_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - notes-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: notes-backend
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/notes_db
+    ports:
+      - "3001:3001"
+    networks:
+      - notes-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: notes-frontend
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      REACT_APP_API_URL: http://172.213.1.56:3001
+    ports:
+      - "3000:3000"
+    networks:
+      - notes-network
+
+volumes:
+  postgres_data:
+
+networks:
+  notes-network:
+    driver: bridge
